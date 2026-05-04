@@ -9,8 +9,8 @@ the task deletes itself.
 
 Because Exchange Online only sends one auto-reply per sender for the lifetime
 of a Scheduled OOF window, re-applying the configuration daily effectively
-resets that "already replied" tracker. This means each sender receives the OOF
-message **once per day** instead of once for the entire period — particularly
+resets the "already replied" tracker. This means each sender receives the OOF
+message **once per day** instead of once for the entire period. Particularly
 useful for mailboxes of departing employees, where correspondents need a
 repeated reminder that the mailbox is no longer monitored.
 
