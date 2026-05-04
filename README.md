@@ -187,12 +187,10 @@ lowercased, with any characters invalid for filenames replaced by `_`.
 ### Example message file
 
 ```
-Thank you for your email.
+Thank you for your message. Please note that this mailbox is not being actively monitored.
 
-I am currently out of the office with no access to email.
-I will return on <date>.
+For general enquiries, please refer to youremail@example.com
 
-For urgent matters, please contact support@contoso.com.
 ```
 
 The same text is used for both internal and external recipients.
