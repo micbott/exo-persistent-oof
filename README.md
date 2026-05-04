@@ -1,7 +1,6 @@
 # OOF Scheduled-Task Manager
 
-Unattended **Out-of-Office (OOF)** management for Exchange Online mailboxes,
-powered by PowerShell 7 and Windows Task Scheduler.
+Unattended **Out-of-Office (OOF)** management for Exchange Online mailboxes - PowerShell 7 and Windows Task Scheduler.
 
 A daily scheduled task re-applies the OOF auto-reply on each configured
 mailbox for a fixed date window, ensuring the setting survives any manual or
