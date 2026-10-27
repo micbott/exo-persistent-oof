@@ -113,12 +113,13 @@ try {
         -AppId            $AppId `
         -CertificateThumbprint $CertificateThumb `
         -Organization     $orgId `
-        -ShowBanner:$false
+        -ShowBanner:$false `
+        -ErrorAction      Stop
 
     # If we are past the end date, disable OOF and exit cleanly
     if ((Get-Date) -gt $EndDate) {
         Write-Output "EndDate ($EndDate) has passed -- disabling OOF on $Mailbox."
-        Set-MailboxAutoReplyConfiguration -Identity $Mailbox -AutoReplyState Disabled
+        Set-MailboxAutoReplyConfiguration -Identity $Mailbox -AutoReplyState Disabled -ErrorAction Stop
         Write-Output "OOF disabled successfully on $Mailbox."
     }
     else {
@@ -134,7 +135,8 @@ try {
             AutoDeclineFutureRequestsWhenOOF = $DeclineMeetings
         }
 
-        Set-MailboxAutoReplyConfiguration @params
+        # -ErrorAction Stop: a non-terminating EXO error must reach catch, not log success
+        Set-MailboxAutoReplyConfiguration @params -ErrorAction Stop
 
         Write-Output "OOF auto-reply successfully set on $Mailbox (Scheduled $StartDate -> $EndDate, DeclineMeetings=$DeclineMeetings)"
     }

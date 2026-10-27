@@ -273,9 +273,17 @@ function Invoke-Register {
 
     Write-Host ""
     try {
+        # register-ooftask.ps1 signals validation failures with exit 1 (not a terminating
+        # error), so check $LASTEXITCODE; reset it first so a stale value can't leak in.
+        $global:LASTEXITCODE = 0
         & $RegisterScript -Mailbox $mailbox -StartDate $startDate.ToString('yyyy-MM-dd') -EndDate $endDate.ToString('yyyy-MM-dd') -RunTime $runTime -DeclineMeetings $declineMeetings
         Write-Host ""
-        Write-Host "  Task registered successfully." -ForegroundColor Green
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  Task registered successfully." -ForegroundColor Green
+        }
+        else {
+            Write-Host "  Registration failed (exit code $LASTEXITCODE). See the error above." -ForegroundColor Red
+        }
     }
     catch {
         Write-Host "  ERROR: $_" -ForegroundColor Red
