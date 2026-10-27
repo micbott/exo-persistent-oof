@@ -184,7 +184,8 @@ if ($LiveTask) {
         if ($state -eq 'Running') {
             Add-Result "Live: $taskName" 'Fail' "Still running after $TimeoutSeconds s"
         }
-        # LastRunTime drifts tens of seconds from the real start, so compare it with its previous value, not the clock
+        # Get-ScheduledTaskInfo reports the minutes in the seconds field (LastRunTime is only accurate
+        # to the minute), so compare it with its previous value, not the clock
         elseif ($info.LastRunTime -le $prevRunTime) {
             Add-Result "Live: $taskName" 'Fail' "Task did not run (LastRunTime $($info.LastRunTime) is not after previous $prevRunTime)"
         }
