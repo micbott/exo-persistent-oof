@@ -1,4 +1,3 @@
-#Requires -Modules ExchangeOnlineManagement
 <#
 .NAME
     exo-persistent-oof -- set-outofoffice.ps1
@@ -107,6 +106,8 @@ $ExternalMessage = $InternalMessage
 # ─────────────────────────────────────────────────────────────────────────────
 
 try {
+    Import-Module ExchangeOnlineManagement -ErrorAction Stop
+
     # Connect to Exchange Online using certificate auth (no prompt)
     Connect-ExchangeOnline `
         -AppId            $AppId `

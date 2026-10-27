@@ -15,6 +15,10 @@
     final run to detect the window has passed and disable the auto-reply.
     After expiry the task is automatically deleted by Task Scheduler.
 
+    Before registering, the script verifies that ExchangeOnlineManagement is
+    installed with -Scope AllUsers, since the task runs as SYSTEM and cannot
+    see modules installed for the current user only.
+
     A -RunTime parameter controls the daily execution time (default 00:30).
     When multiple mailboxes are registered, stagger the times (e.g. 00:30,
     00:35, 00:40) to avoid Exchange Online throttling.
@@ -74,6 +78,21 @@ $ScriptPath      = "C:\Scripts\tasks\Set-OutOfOffice.ps1"
 # run, detect the date has passed, disable the OOF, and then the task is removed.
 $TaskExpiry      = $EndDate.AddDays(1)
 # ─────────────────────────────────────────────────────────────────────────────
+
+# Pre-flight: the task runs as SYSTEM, which only sees AllUsers module paths
+# under Program Files. A CurrentUser install would make every daily run fail.
+# Check the folders directly rather than Get-Module -ListAvailable, so the
+# result does not depend on which shell (powershell.exe / pwsh) runs this script.
+$allUsersModulePaths = @(
+    Join-Path $env:ProgramFiles 'PowerShell\Modules\ExchangeOnlineManagement'
+    Join-Path $env:ProgramFiles 'WindowsPowerShell\Modules\ExchangeOnlineManagement'
+)
+if (-not ($allUsersModulePaths | Where-Object { Test-Path $_ })) {
+    Write-Error ("ExchangeOnlineManagement is not installed for AllUsers (checked: $($allUsersModulePaths -join ', ')). " +
+        "The task runs as SYSTEM and cannot load a CurrentUser install. " +
+        "From an elevated shell run: Install-Module ExchangeOnlineManagement -Scope AllUsers")
+    exit 1
+}
 
 # Build the action -- runs pwsh and passes fixed params (logging handled by Start-Transcript in the script)
 # Note: -File mode requires the colon-attached syntax (-Param:$Value) for [bool] parameters;
