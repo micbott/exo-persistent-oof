@@ -25,9 +25,10 @@ repeated reminder that the mailbox is no longer monitored.
 5. [Configuration — config.json](#configuration--configjson)
 6. [Message Files](#message-files)
 7. [Usage](#usage)
-8. [File Overview](#file-overview)
-9. [Logs](#logs)
-10. [Troubleshooting](#troubleshooting)
+8. [Testing a Deployment](#testing-a-deployment)
+9. [File Overview](#file-overview)
+10. [Logs](#logs)
+11. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -233,6 +234,37 @@ pwsh -ExecutionPolicy Bypass -File "C:\Scripts\tasks\exo-persistent-oof.ps1"
 - The task trigger expires one day after `-EndDate`, giving the script a final
   run to detect the window has passed and disable the auto-reply. The task is
   then automatically deleted by Task Scheduler.
+- Add `-WhatIf` to run every check (including the AllUsers module check) and
+  show the task that would be registered, without registering it.
+
+---
+
+## Testing a Deployment
+
+After copying updated scripts to `C:\Scripts\tasks\`, run `test-deployment.ps1`
+**from the repo checkout** (it compares the repo with the deployed folder):
+
+```powershell
+# Offline checks only -- no Exchange Online contact
+.\test-deployment.ps1
+
+# Offline checks, then run one task live and check its exit code and log
+.\test-deployment.ps1 -LiveTask ctao-media
+
+# Show what the live run would do, without starting the task
+.\test-deployment.ps1 -LiveTask ctao-media -WhatIf
+```
+
+Offline checks: `pwsh.exe` present, ExchangeOnlineManagement installed for
+AllUsers, each deployed script identical to the repo (line endings ignored)
+and parseable, `config.json` / `Messages\default.txt` / `Logs\` present, and
+the status of every `Set-OutOfOffice-*` task.
+
+The live run applies the OOF settings in Exchange Online exactly like the
+task's nightly run. It is skipped if any offline check fails, and refused for
+tasks with `-DeclineMeetings:$True` unless `-AllowDeclineMeetings` is passed,
+because such a run can decline real meeting requests. The script exits `0`
+when no check failed, `1` otherwise.
 
 ---
 
@@ -244,6 +276,7 @@ pwsh -ExecutionPolicy Bypass -File "C:\Scripts\tasks\exo-persistent-oof.ps1"
 | `set-outofoffice.ps1` | Core script called by the scheduled task. Connects to EXO, applies or disables the OOF auto-reply, writes a transcript log. |
 | `register-ooftask.ps1` | Creates a per-user Windows Scheduled Task that runs `set-outofoffice.ps1` daily as SYSTEM. |
 | `exo-persistent-oof.ps1` | Interactive 6-option controller menu for day-to-day management. |
+| `test-deployment.ps1` | Run from the repo: checks the deployed scripts match and can run as SYSTEM, optionally runs one task live. Not deployed. |
 | `Messages\default.txt` | Fallback OOF message used when no per-user file exists. |
 | `Messages\<usertag>.txt` | Per-user OOF message (optional). |
 | `Logs\task_output-<usertag>.log` | Transcript log for each mailbox (created automatically). |

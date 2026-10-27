@@ -50,11 +50,17 @@
 .EXAMPLE
     .\register-ooftask.ps1 -Mailbox "ctao-media@contoso.com" -StartDate "2026-02-25" -EndDate "2026-03-27" -DeclineMeetings $false
 
+.EXAMPLE
+    .\register-ooftask.ps1 -Mailbox "user@contoso.com" -StartDate "2026-02-25" -EndDate "2026-03-27" -WhatIf
+    Runs every validation (including the AllUsers module check) and shows the
+    task that would be registered, without registering it.
+
 .NOTES
     Author  : Michelangelo Bottura
     License : MIT
     Source  : https://github.com/micbott/exo-persistent-oof
 #>
+[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Low')]
 param(
     [Parameter(Mandatory)][string]   $Mailbox,
     [Parameter(Mandatory)][datetime] $StartDate,
@@ -120,17 +126,24 @@ $principal = New-ScheduledTaskPrincipal `
     -LogonType ServiceAccount `
     -RunLevel Highest
 
-# Register (or overwrite) the task
-Register-ScheduledTask `
-    -TaskName    $TaskName `
-    -Description $TaskDescription `
-    -Action      $action `
-    -Trigger     $trigger `
-    -Settings    $settings `
-    -Principal   $principal `
-    -Force
-
-Write-Output "Scheduled task '$TaskName' registered successfully."
+# Register (or overwrite) the task -- skipped under -WhatIf, all checks above still run
+if ($PSCmdlet.ShouldProcess($TaskName, "Register scheduled task (runs as SYSTEM daily at $RunTime)")) {
+    Register-ScheduledTask `
+        -TaskName    $TaskName `
+        -Description $TaskDescription `
+        -Action      $action `
+        -Trigger     $trigger `
+        -Settings    $settings `
+        -Principal   $principal `
+        -Force
+    Write-Output "Scheduled task '$TaskName' registered successfully."
+}
+else {
+    # ShouldProcess is also false when -Confirm is answered No
+    $label = if ($WhatIfPreference) { "[WhatIf] Would register" } else { "Skipped registering" }
+    Write-Output "$label '$TaskName' (nothing was changed)."
+    Write-Output "  Command         : pwsh.exe $scriptArgs"
+}
 Write-Output "  Mailbox         : $Mailbox"
 Write-Output "  OOF             : $($StartDate.ToString('yyyy-MM-dd')) -> $($EndDate.ToString('yyyy-MM-dd'))"
 Write-Output "  Runs daily at $RunTime as SYSTEM."
