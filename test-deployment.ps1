@@ -172,7 +172,8 @@ if ($LiveTask) {
         $logFile  = Join-Path $DeployPath "Logs\task_output-$userTag.log"
         $logStart = if (Test-Path $logFile) { (Get-Item $logFile).Length } else { 0 }
 
-        $startedAt = Get-Date
+        $prevRunTime = (Get-ScheduledTaskInfo -TaskName $taskName).LastRunTime
+        $startedAt   = Get-Date
         Start-ScheduledTask -TaskName $taskName -ErrorAction Stop
         do {
             Start-Sleep -Seconds 5
@@ -183,8 +184,9 @@ if ($LiveTask) {
         if ($state -eq 'Running') {
             Add-Result "Live: $taskName" 'Fail' "Still running after $TimeoutSeconds s"
         }
-        elseif ($info.LastRunTime -lt $startedAt.AddSeconds(-5)) {
-            Add-Result "Live: $taskName" 'Fail' "Task did not run (LastRunTime $($info.LastRunTime))"
+        # LastRunTime drifts tens of seconds from the real start, so compare it with its previous value, not the clock
+        elseif ($info.LastRunTime -le $prevRunTime) {
+            Add-Result "Live: $taskName" 'Fail' "Task did not run (LastRunTime $($info.LastRunTime) is not after previous $prevRunTime)"
         }
         elseif ($info.LastTaskResult -ne 0) {
             Add-Result "Live: $taskName" 'Fail' "LastTaskResult=$($info.LastTaskResult)"
