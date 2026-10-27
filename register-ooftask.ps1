@@ -135,7 +135,8 @@ if ($PSCmdlet.ShouldProcess($TaskName, "Register scheduled task (runs as SYSTEM 
         -Trigger     $trigger `
         -Settings    $settings `
         -Principal   $principal `
-        -Force
+        -Force `
+        -ErrorAction Stop
     Write-Output "Scheduled task '$TaskName' registered successfully."
 }
 else {

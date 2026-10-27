@@ -79,6 +79,14 @@ function Add-Result ([string]$Check, [string]$Status, [string]$Detail) {
     $results.Add([PSCustomObject]@{ Check = $Check; Status = $Status; Detail = $Detail })
 }
 
+# Same rule as Get-DeclineMeetingsFromTask in exo-persistent-oof.ps1: a task without the
+# flag uses set-outofoffice.ps1's default ($true), so it DOES decline meetings.
+function Get-DeclineMeetings ($Task) {
+    $match = [regex]::Match($Task.Actions[0].Arguments, '-DeclineMeetings[:\s]+\$(\w+)')
+    if ($match.Success) { return $match.Groups[1].Value }
+    return 'True'
+}
+
 if (-not (Test-Path $DeployPath)) {
     Write-Error "Deploy folder not found: $DeployPath"
     exit 1
@@ -131,7 +139,7 @@ foreach ($item in 'config.json', 'Messages\default.txt', 'Logs') {
 $tasks = @(Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskName -like "Set-OutOfOffice-*" })
 foreach ($t in $tasks) {
     $info    = $t | Get-ScheduledTaskInfo
-    $decline = [regex]::Match($t.Actions[0].Arguments, '-DeclineMeetings[:\s]+\$(\w+)').Groups[1].Value
+    $decline = Get-DeclineMeetings $t
     $detail  = "State=$($t.State) LastResult=$($info.LastTaskResult) NextRun=$($info.NextRunTime) DeclineMeetings=$decline"
     # 267011 (0x41303) = task has not run yet
     $status  = if ($info.LastTaskResult -in 0, 267011) { 'Info' } else { 'Warn' }
@@ -143,7 +151,7 @@ $newLog = $null
 if ($LiveTask) {
     $taskName = "Set-OutOfOffice-$LiveTask"
     $task     = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
-    $decline  = if ($task) { [regex]::Match($task.Actions[0].Arguments, '-DeclineMeetings[:\s]+\$(\w+)').Groups[1].Value }
+    $decline  = if ($task) { Get-DeclineMeetings $task }
     $isAdmin  = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
                 ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
